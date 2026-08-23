@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>180 Exams Viewer</title>
+    <style>
+        /* Base styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: black;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Sticky Header */
+        .header-container {
+            background-color: #ffffff;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #000;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-container h1 {
+            margin: 0 0 15px 0;
+            font-size: 1.8rem;
+            color: black;
+        }
+
+        /* Search Bar */
+        .search-wrapper {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .search-wrapper input {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 2px solid #000;
+            border-radius: 0; 
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .search-wrapper input:focus {
+            background-color: #f9f9f9;
+        }
+
+        /* 2-Column Grid Layout */
+        .graph-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            align-items: start;
+        }
+
+        /* Exam Card */
+        .exam-card {
+            background-color: #ffffff;
+            border: 1px solid #000;
+            border-radius: 0; 
+            padding: 15px;
+            text-align: center;
+        }
+
+        .exam-card h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.3rem;
+            color: black;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+
+        /* Image Container with Hover Effect */
+        .img-container {
+            position: relative;
+            cursor: pointer;
+            border: 1px solid #eee;
+            background-color: #eeeeee;
+        }
+
+        .img-container img {
+            width: 100%;
+            height: auto;
+            max-height: 220px;
+            display: block;
+            border-radius: 0;
+            object-fit: contain;
+        }
+
+        /* Hover Overlay */
+        .img-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .img-container:hover .img-overlay {
+            opacity: 1;
+        }
+
+        /* Modal / Full Image Viewer */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        /* Close Button */
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #ffffff;
+            color: #000000;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid #000;
+            border-radius: 0;
+            text-transform: uppercase;
+        }
+
+        .close-btn:hover {
+            background-color: #cccccc;
+        }
+
+        .modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 5px solid #ffffff;
+            border-radius: 0;
+        }
+
+        /* No Results Message */
+        .no-results {
+            display: none;
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: black;
+        }
+
+        /* Mobile specific spacing */
+        @media (max-width: 600px) {
+            .graph-grid {
+                grid-template-columns: 1fr;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header-container">
+        <h1>180 Exams</h1>
+        <div class="search-wrapper">
+            <input type="text" id="searchInput" placeholder="Search (e.g. Exam 1, 45, Exam 180)...">
+        </div>
+    </header>
+
+    <main class="graph-grid" id="graphContainer">
+        <div class="no-results" id="noResultsMsg">No matching exams found.</div>
+    </main>
+
+    <!-- Modal for viewing full images -->
+    <div class="modal" id="imageModal">
+        <div class="close-btn" id="closeModal">Close</div>
+        <img id="modalImage" src="" alt="Full view">
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const totalExams = 180;
+            const container = document.getElementById('graphContainer');
+            const searchInput = document.getElementById('searchInput');
+            const noResultsMsg = document.getElementById('noResultsMsg');
+            
+            // Modal Elements
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            const closeBtn = document.getElementById('closeModal');
+
+            // 1. Generate all 180 Exam Cards (Looping backwards from 180 down to 1)
+            for (let i = totalExams; i >= 1; i--) {
+                const imgSrc = `http://archivefiles.github.io/live-exam-daily-weekly-monthly-paper-final-subject-final-combined-paper-final-finalspecial-modeltest/exam${i}.png`;
+                const card = document.createElement('div');
+                card.className = 'exam-card';
+                card.setAttribute('data-exam', i);
+
+                card.innerHTML = `
+                    <h2>Exam ${i}</h2>
+                    <div class="img-container" onclick="openModal('${imgSrc}')">
+                        <img 
+                            src="${imgSrc}" 
+                            alt="Exam ${i}" 
+                            loading="lazy"
+                            onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22280%22 height=%22140%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23eeeeee%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2214px%22 fill=%22%23000000%22%3EImage Missing%3C/text%3E%3C/svg%3E';"
+                        >
+                        <div class="img-overlay">View Image</div>
+                    </div>
+                `;
+                // Insert before the no-results message to maintain grid structure
+                container.insertBefore(card, noResultsMsg);
+            }
+
+            // 2. Text-based Search Functionality
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase().trim();
+                const cards = document.querySelectorAll('.exam-card');
+                let visibleCount = 0;
+
+                cards.forEach(card => {
+                    const examNumber = card.getAttribute('data-exam');
+                    const examString = `exam ${examNumber}`;
+                    
+                    if (searchTerm === '' || examString.includes(searchTerm) || examNumber.includes(searchTerm)) {
+                        card.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                if (visibleCount === 0) {
+                    noResultsMsg.style.display = 'block';
+                } else {
+                    noResultsMsg.style.display = 'none';
+                }
+            });
+
+            // 3. Modal / Image Viewer Logic
+            window.openModal = function(src) {
+                modalImg.src = src;
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
